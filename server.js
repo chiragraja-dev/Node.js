@@ -4,7 +4,8 @@ const db = require('./db')
 const Persons = require('./models/persons')
 const bodyParser = require('body-parser')
 app.use(bodyParser.json())
-
+require('dotenv').config()
+const PORT = process.env.PORT
 
 app.get('/', function (req, res) {
     console.log("getting the api data for the /")
@@ -15,4 +16,4 @@ app.get('/', function (req, res) {
 const personRoutes = require('./routes/personsRoutes')
 app.use('/', personRoutes)
 
-app.listen(3000)
+app.listen(PORT)
