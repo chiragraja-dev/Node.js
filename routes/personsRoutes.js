@@ -1,15 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const Persons = require('../models/persons')
+const Persons = require('../models/persons');
+const { generateToken, jwtAuthMiddleware } = require('../jwt');
 
 
 
-router.post('/persons', async (req, res) => {
+router.post('/signup', async (req, res) => {
     const data = req.body
     try {
         const newPerson = new Persons(data)
         const response = await newPerson.save()
-        res.status(200).json(response)
+        const payload = {
+            id: response?.id,
+            email: response?.email
+        }
+        const token = generateToken(payload)
+        res.status(200).json({ response, token })
     } catch (error) {
         // res.status(400).json("------", error)
         res.status(400).json({ message: "Something went wrong", error: error.message });
@@ -17,7 +23,27 @@ router.post('/persons', async (req, res) => {
     }
 })
 
-router.get('/get-persons', async (req, res) => {
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body
+        const user = await Persons.findOne({ email: email })
+        if (!user || !(await user.comparePassword(password))) {
+            res.status(401).json({ message: "Invalid username or password" });
+        }
+        const payload = {
+            id: user?.id,
+            email: user?.email
+        }
+        const token = generateToken(payload)
+        res.status(200).json({ token: token })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).json({ message: "Something went wrong" });
+    }
+})
+
+router.get('/get-persons', jwtAuthMiddleware, async (req, res) => {
     try {
         const data = await Persons.find()
         res.status(200).json(data)
